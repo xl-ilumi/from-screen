@@ -8,6 +8,8 @@ export type Place = {
   lat: number;
   lng: number;
   source_type: "TV" | "YOUTUBE";
+  source_name: string;
+  channel_name: string;
 };
 
 export async function getPlaces(): Promise<Place[]> {
