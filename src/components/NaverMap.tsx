@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { Place } from "@/lib/api";
 
 type Props = {
-  places?: Place[]; // 외부에서 주입받을 맛집 데이터 리스트
+  places?: Place[];
   onPlaceClick?: (place: Place) => void;
 };
 
@@ -16,6 +16,8 @@ export default function NaverMap({ places = [], onPlaceClick }: Props) {
   const mapDivRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<naver.maps.Map | null>(null);
   const userMarkerRef = useRef<naver.maps.Marker | null>(null);
+  const markerListRef = useRef<naver.maps.Marker[]>([]);
+
   const [isLoaded, setIsLoaded] = useState(false);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
 
@@ -153,6 +155,13 @@ export default function NaverMap({ places = [], onPlaceClick }: Props) {
     const map = mapRef.current;
     if (!isLoaded || !map || !window.naver || places.length === 0) return;
 
+    markerListRef.current.forEach((marker) => {
+      marker.setMap(null);
+    });
+    markerListRef.current = [];
+
+    if (places.length === 0) return;
+
     places.forEach((place) => {
       const marker = new window.naver.maps.Marker({
         position: new window.naver.maps.LatLng(place.lat, place.lng),
@@ -186,6 +195,9 @@ export default function NaverMap({ places = [], onPlaceClick }: Props) {
           map.panTo(new window.naver.maps.LatLng(place.lat, place.lng));
         }
       });
+
+      // 3. 생성된 마커를 목록에 저장 (나중에 지우기 위해)
+      markerListRef.current.push(marker);
     });
 
     console.log(`📍 마커 ${places.length}개 생성 완료!`);
