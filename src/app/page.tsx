@@ -1,15 +1,22 @@
 "use client";
 
-import { SlidersHorizontal } from "lucide-react";
+import { List, SlidersHorizontal } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import FilterModal from "@/components/FilterModal";
 import NaverMap from "@/components/NaverMap";
 import PlaceDetail from "@/components/PlaceDetail";
+import PlaceListModal from "@/components/PlaceListModal";
 import { getPlaces, type Place } from "@/lib/api";
+import { calculateDistance } from "@/lib/utils/distance";
 
 export default function Home() {
   const [places, setPlaces] = useState<Place[]>([]);
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
+  const [userLocation, setUserLocation] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
+  const [isListOpen, setIsListOpen] = useState(false);
 
   // 모달 열림 상태 & 선택된 필터들
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -38,9 +45,9 @@ export default function Home() {
     };
   }, [places]);
 
-  // 복합 필터링 로직
+  // 복합 필터링 및 정렬 로직
   const processedPlaces = useMemo(() => {
-    let result = places;
+    let result = [...places];
 
     // 1. 방송 필터 적용
     if (selectedFilters.sources.length > 0) {
@@ -55,8 +62,23 @@ export default function Home() {
       );
     }
 
+    // 3. 거리 계산 및 정렬
+    if (userLocation) {
+      result = result
+        .map((p) => ({
+          ...p,
+          distance: calculateDistance(
+            userLocation.lat,
+            userLocation.lng,
+            p.lat,
+            p.lng,
+          ),
+        }))
+        .sort((a, b) => (a.distance || 0) - (b.distance || 0));
+    }
+
     return result;
-  }, [places, selectedFilters]);
+  }, [places, selectedFilters, userLocation]);
 
   // 필터 변경 핸들러
   const handleFilterChange = (
@@ -89,32 +111,45 @@ export default function Home() {
               </h1>
             </div>
 
-            {/* 👇 필터 버튼 (모달 열기) */}
-            <button
-              type="button"
-              onClick={() => setIsFilterOpen(true)}
-              className={`
-                flex items-center gap-2 px-4 py-3 rounded-xl shadow-lg backdrop-blur-sm border transition-colors
+            <div className="flex gap-2">
+              {/* 👇 목록 보기 버튼 */}
+              <button
+                type="button"
+                onClick={() => setIsListOpen(true)}
+                className="flex items-center gap-2 px-4 py-3 rounded-xl shadow-lg backdrop-blur-sm border bg-white/90 text-gray-700 border-gray-200 transition-colors pointer-events-auto active:scale-95"
+              >
+                <List size={18} />
+                <span className="font-bold text-sm">목록</span>
+              </button>
+
+              {/* 👇 필터 버튼 (모달 열기) */}
+              <button
+                type="button"
+                onClick={() => setIsFilterOpen(true)}
+                className={`
+                flex items-center gap-2 px-4 py-3 rounded-xl shadow-lg backdrop-blur-sm border transition-colors pointer-events-auto active:scale-95
                 ${activeFilterCount > 0 ? "bg-gray-900 text-white border-gray-900" : "bg-white/90 text-gray-700 border-gray-200"}
               `}
-            >
-              <SlidersHorizontal size={18} />
-              <span className="font-bold text-sm">필터</span>
-              {activeFilterCount > 0 && (
-                <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
-                  {activeFilterCount}
-                </span>
-              )}
-            </button>
+              >
+                <SlidersHorizontal size={18} />
+                <span className="font-bold text-sm">필터</span>
+                {activeFilterCount > 0 && (
+                  <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </button>
+            </div>
           </div>
         )}
       </div>
 
-      {/* 메인 컨텐츠 */}
+      {/* 메인 컨텐츠: 지도는 항상 유지 */}
       <NaverMap
         places={processedPlaces}
         onPlaceClick={(place) => setSelectedPlace(place)}
-        // onLocationFound={(lat, lng) => setMyLocation({ lat, lng })}
+        onLocationFound={(lat, lng) => setUserLocation({ lat, lng })}
+        centerPlace={selectedPlace}
       />
 
       {/* 상세 정보창 */}
@@ -133,6 +168,14 @@ export default function Home() {
         selectedFilters={selectedFilters}
         onFilterChange={handleFilterChange}
         onReset={() => setSelectedFilters({ sources: [], categories: [] })}
+      />
+
+      {/* 👇 장소 목록 모달 연결 */}
+      <PlaceListModal
+        isOpen={isListOpen}
+        onClose={() => setIsListOpen(false)}
+        places={processedPlaces}
+        onPlaceClick={(place) => setSelectedPlace(place)}
       />
     </main>
   );

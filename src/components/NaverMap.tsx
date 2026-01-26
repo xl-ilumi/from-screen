@@ -8,26 +8,35 @@ import type { Place } from "@/lib/api";
 type Props = {
   places?: Place[];
   onPlaceClick?: (place: Place) => void;
+  onLocationFound?: (lat: number, lng: number) => void;
+  centerPlace?: Place | null;
 };
 
 const MAP_STYLE_ID = "57c399f8-b89a-4355-9da0-52debacba0f8";
 
-export default function NaverMap({ places = [], onPlaceClick }: Props) {
+export default function NaverMap({
+  places = [],
+  onPlaceClick,
+  onLocationFound,
+  centerPlace,
+}: Props) {
   const mapDivRef = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<naver.maps.Map | null>(null);
+  const [map, setMap] = useState<naver.maps.Map | null>(null);
   const userMarkerRef = useRef<naver.maps.Marker | null>(null);
   const markerListRef = useRef<naver.maps.Marker[]>([]);
 
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(
+    typeof window !== "undefined" && !!window.naver,
+  );
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
 
   const handleCurrentLocation = useCallback(
     (targetMap?: naver.maps.Map, lat?: number, lng?: number) => {
       console.log("📍 handleCurrentLocation 호출됨", { lat, lng });
-      const map = targetMap || mapRef.current;
-      if (!map || !window.naver) {
+      const currentMap = targetMap || map;
+      if (!currentMap || !window.naver) {
         console.log("❌ 지도 또는 naver 객체가 준비되지 않음", {
-          map: !!map,
+          map: !!currentMap,
           naver: !!window.naver,
         });
         return;
@@ -42,8 +51,8 @@ export default function NaverMap({ places = [], onPlaceClick }: Props) {
           latitude,
           longitude,
         );
-        map.setCenter(myLocation);
-        map.setZoom(16);
+        currentMap.setCenter(myLocation);
+        currentMap.setZoom(16);
 
         // (2) 기존에 찍힌 내 위치 마커가 있으면 지우기 (중복 방지)
         if (userMarkerRef.current) {
@@ -53,7 +62,7 @@ export default function NaverMap({ places = [], onPlaceClick }: Props) {
         // (3) 내 위치 마커 새로 찍기 (파란색 + 애니메이션 효과)
         userMarkerRef.current = new window.naver.maps.Marker({
           position: myLocation,
-          map: map,
+          map: currentMap,
           zIndex: 100, // 다른 마커보다 위에 보이게
           icon: {
             content: `
@@ -79,6 +88,11 @@ export default function NaverMap({ places = [], onPlaceClick }: Props) {
             anchor: new window.naver.maps.Point(10, 10),
           },
         });
+
+        // (4) 부모에게 위치 정보 전달
+        if (onLocationFound) {
+          onLocationFound(latitude, longitude);
+        }
       };
 
       // 만약 이미 좌표가 있으면 바로 업데이트
@@ -108,17 +122,16 @@ export default function NaverMap({ places = [], onPlaceClick }: Props) {
         alert("GPS를 지원하지 않는 브라우저입니다.");
       }
     },
-    [],
+    [onLocationFound, map],
   );
 
   // 1. 지도 초기화 (최초 1회 실행)
   useEffect(() => {
-    if (!isLoaded || !mapDivRef.current || !window.naver || mapRef.current)
-      return;
+    if (!isLoaded || !mapDivRef.current || !window.naver || map) return;
 
     const initializeMap = (lat: number, lng: number) => {
       const container = mapDivRef.current;
-      if (!container || mapRef.current) return;
+      if (!container || map) return;
 
       const center = new window.naver.maps.LatLng(lat, lng);
       const mapInstance = new window.naver.maps.Map(container, {
@@ -127,10 +140,19 @@ export default function NaverMap({ places = [], onPlaceClick }: Props) {
         gl: true,
         customStyleId: MAP_STYLE_ID,
       });
-      mapRef.current = mapInstance;
+      setMap(mapInstance);
 
       console.log("✅ 지도 초기화 완료:", lat, lng);
-      handleCurrentLocation(mapInstance, lat, lng);
+
+      // centerPlace가 있으면 그곳으로, 없으면 내 위치로 이동하도록 handleCurrentLocation 호출
+      if (centerPlace) {
+        mapInstance.setCenter(
+          new window.naver.maps.LatLng(centerPlace.lat, centerPlace.lng),
+        );
+        mapInstance.setZoom(17);
+      } else {
+        handleCurrentLocation(mapInstance, lat, lng);
+      }
     };
 
     // 위치 정보를 먼저 가져오고 지도를 만듭니다. (점프 방지)
@@ -148,12 +170,22 @@ export default function NaverMap({ places = [], onPlaceClick }: Props) {
     } else {
       initializeMap(37.5665, 126.978);
     }
-  }, [isLoaded, handleCurrentLocation]);
+  }, [isLoaded, map, handleCurrentLocation, centerPlace]);
 
-  // 2. 마커 찍기 (places 데이터가 들어오거나 바뀔 때 실행)
+  // 2. 외부에서 centerPlace가 변경될 때 지도 중심 이동
   useEffect(() => {
-    const map = mapRef.current;
-    if (!isLoaded || !map || !window.naver || places.length === 0) return;
+    if (!map || !centerPlace) return;
+    map.setCenter(
+      new window.naver.maps.LatLng(centerPlace.lat, centerPlace.lng),
+    );
+    map.setZoom(17);
+  }, [map, centerPlace]);
+
+  // 3. 마커 찍기 (places 데이터가 들어오거나 바뀔 때 실행)
+  useEffect(() => {
+    if (!isLoaded || !map || !window.naver) return;
+
+    console.log("📍 마커 업데이트 시작", { count: places.length });
 
     markerListRef.current.forEach((marker) => {
       marker.setMap(null);
@@ -192,7 +224,9 @@ export default function NaverMap({ places = [], onPlaceClick }: Props) {
         if (onPlaceClick) {
           onPlaceClick(place);
           // 클릭 시 해당 위치로 지도 이동 (부드럽게)
-          map.panTo(new window.naver.maps.LatLng(place.lat, place.lng));
+          if (map) {
+            map.panTo(new window.naver.maps.LatLng(place.lat, place.lng));
+          }
         }
       });
 
@@ -201,14 +235,14 @@ export default function NaverMap({ places = [], onPlaceClick }: Props) {
     });
 
     console.log(`📍 마커 ${places.length}개 생성 완료!`);
-  }, [places, isLoaded, onPlaceClick]);
+  }, [places, isLoaded, map, onPlaceClick]);
 
   return (
     <>
       <Script
         strategy="afterInteractive"
         src={`https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${process.env.NEXT_PUBLIC_NAVER_MAP_CLIENT_ID}&submodules=gl`}
-        onLoad={() => setIsLoaded(true)}
+        onReady={() => setIsLoaded(true)}
       />
       <div className="relative w-full h-full">
         <div ref={mapDivRef} className="w-full h-full" />
