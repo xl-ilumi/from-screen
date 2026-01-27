@@ -13,9 +13,10 @@ import { openMapApp } from "@/lib/utils/map-links";
 type Props = {
   place: Place;
   onClose: () => void;
+  userLocation: { lat: number; lng: number } | null;
 };
 
-export default function PlaceDetail({ place, onClose }: Props) {
+export default function PlaceDetail({ place, onClose, userLocation }: Props) {
   const [showMapMenu, setShowMapMenu] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -32,6 +33,8 @@ export default function PlaceDetail({ place, onClose }: Props) {
       lng: place.lng,
       name: place.restaurant_name,
       address: place.address,
+      startLat: userLocation?.lat,
+      startLng: userLocation?.lng,
     });
     setShowMapMenu(false);
   };

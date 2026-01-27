@@ -7,6 +7,8 @@ interface MapLinkParams {
   lng: number;
   name: string;
   address: string;
+  startLat?: number;
+  startLng?: number;
 }
 
 const isMobile = () => /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
@@ -15,22 +17,34 @@ const isAndroid = () => /Android/i.test(navigator.userAgent);
 
 export const getMapAppLink = (
   app: MapApp,
-  { lat, lng, name, address }: MapLinkParams,
+  { lat, lng, name, address, startLat, startLng }: MapLinkParams,
 ): string => {
   const label = `${name} (${address})`;
   const encodedLabel = encodeURIComponent(label);
 
+  const startParam =
+    startLat && startLng ? { lat: startLat, lng: startLng } : null;
+
   switch (app) {
     case "naver":
-      return `nmap://route/public?dlat=${lat}&dlng=${lng}&dname=${encodedLabel}&appname=fromscreen`;
+      return `nmap://route/public?dlat=${lat}&dlng=${lng}&dname=${encodedLabel}${
+        startParam
+          ? `&slat=${startParam.lat}&slng=${startParam.lng}&sname=${encodeURIComponent("내 위치")}`
+          : ""
+      }&appname=fromscreen`;
     case "kakao":
-      // 카카오맵 앱은 좌표 우선이나, 검색 연동이 더 나을 수 있음. 일단은 좌표 기반 길찾기.
-      return `kakaomap://route?ep=${lat},${lng}&by=PUBLICTRANSIT`;
+      // 카카오맵: sp=lat,lng (출발지), ep=lat,lng (도착지)
+      return `kakaomap://route?ep=${lat},${lng}${
+        startParam ? `&sp=${startParam.lat},${startParam.lng}` : ""
+      }&by=PUBLICTRANSIT`;
     case "tmap":
-      return `tmap://route?dname=${encodedLabel}&dlat=${lat}&dlng=${lng}`;
+      return `tmap://route?dname=${encodedLabel}&dlat=${lat}&dlng=${lng}${
+        startParam ? `&slat=${startParam.lat}&slng=${startParam.lng}` : ""
+      }`;
     case "google":
-      // 구글의 경우 destination에 이름을 넣으면 더 잘 보임
-      return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&query=${encodedLabel}`;
+      return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}${
+        startParam ? `&origin=${startParam.lat},${startParam.lng}` : ""
+      }&query=${encodedLabel}`;
     default:
       return "#";
   }
@@ -38,24 +52,40 @@ export const getMapAppLink = (
 
 export const getMapWebFallback = (
   app: MapApp,
-  { lat, lng, name, address }: MapLinkParams,
+  { lat, lng, name, address, startLat, startLng }: MapLinkParams,
 ): string => {
   const label = `${name} (${address})`;
   const encodedLabel = encodeURIComponent(label);
   const encodedNameOnly = encodeURIComponent(name);
+  const startParam =
+    startLat && startLng ? { lat: startLat, lng: startLng } : null;
 
   switch (app) {
     case "naver":
-      return `https://map.naver.com/v5/directions/-/-/destination,${lng},${lat},${encodedLabel},/walk`;
+      return `https://map.naver.com/v5/directions/${
+        startParam
+          ? `${startParam.lng},${startParam.lat},${encodeURIComponent("내 위치")}`
+          : "-"
+      }/${lng},${lat},${encodedLabel},/walk`;
     case "kakao":
-      return `https://map.kakao.com/link/to/${encodedNameOnly},${lat},${lng}`;
+      return `https://map.kakao.com/link/to/${encodedNameOnly},${lat},${lng}${
+        startParam
+          ? `/from/${encodeURIComponent("내 위치")},${startParam.lat},${startParam.lng}`
+          : ""
+      }`;
     case "tmap":
       if (isIOS()) return "https://apps.apple.com/kr/app/t-map/id431589174";
       if (isAndroid())
         return "https://play.google.com/store/apps/details?id=com.skt.tmap.ku";
-      return `https://map.naver.com/v5/directions/-/-/destination,${lng},${lat},${encodedLabel},/walk`;
+      return `https://map.naver.com/v5/directions/${
+        startParam
+          ? `${startParam.lng},${startParam.lat},${encodeURIComponent("내 위치")}`
+          : "-"
+      }/${lng},${lat},${encodedLabel},/walk`;
     case "google":
-      return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&query=${encodedLabel}`;
+      return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}${
+        startParam ? `&origin=${startParam.lat},${startParam.lng}` : ""
+      }&query=${encodedLabel}`;
     default:
       return "#";
   }

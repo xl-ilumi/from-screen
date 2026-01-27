@@ -301,6 +301,7 @@ export default function Home() {
         <PlaceDetail
           place={selectedPlace}
           onClose={() => setSelectedPlace(null)}
+          userLocation={userLocation}
         />
       )}
 
