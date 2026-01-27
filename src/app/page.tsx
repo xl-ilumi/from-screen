@@ -1,7 +1,7 @@
 "use client";
 
-import { List, SlidersHorizontal } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { MapPin, Search, Tv, Utensils } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import FilterModal from "@/components/FilterModal";
 import NaverMap from "@/components/NaverMap";
 import PlaceDetail from "@/components/PlaceDetail";
@@ -16,7 +16,6 @@ export default function Home() {
     lat: number;
     lng: number;
   } | null>(null);
-  const [isListOpen, setIsListOpen] = useState(false);
 
   // 모달 열림 상태 & 선택된 필터들
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -24,6 +23,9 @@ export default function Home() {
     sources: string[];
     categories: string[];
   }>({ sources: [], categories: [] });
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     async function fetchData() {
@@ -31,6 +33,20 @@ export default function Home() {
       setPlaces(data);
     }
     fetchData();
+  }, []);
+
+  // 외부 클릭 시 검색 제안 닫기
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(event.target as Node)
+      ) {
+        setIsSearchFocused(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   // DB 데이터에서 필터 옵션 자동 추출 (중복 제거)
@@ -77,8 +93,98 @@ export default function Home() {
         .sort((a, b) => (a.distance || 0) - (b.distance || 0));
     }
 
+    // 4. 검색어 필터링
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      result = result.filter(
+        (p) =>
+          p.restaurant_name.toLowerCase().includes(query) ||
+          p.source_name.toLowerCase().includes(query) ||
+          p.category.toLowerCase().includes(query) ||
+          p.title.toLowerCase().includes(query),
+      );
+    }
+
     return result;
-  }, [places, selectedFilters, userLocation]);
+  }, [places, selectedFilters, userLocation, searchQuery]);
+
+  // 연관 검색어 제안 추출
+  const searchSuggestions = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const query = searchQuery.toLowerCase().trim();
+    const suggestions: {
+      type: "place" | "source" | "category";
+      text: string;
+      subText?: string;
+      data?: Place;
+    }[] = [];
+
+    // 1. 방송명 매칭 (핵심 연관성)
+    const sources = Array.from(new Set(places.map((p) => p.source_name)));
+    const matchedSources = sources.filter((s) =>
+      s.toLowerCase().includes(query),
+    );
+
+    for (const source of matchedSources) {
+      // 방송 자체 추가
+      suggestions.push({
+        type: "source",
+        text: source,
+        subText: "방송 프로그램",
+      });
+
+      // 이 방송에 출연한 식당들도 최대 3개까지 제안에 포함
+      const relatedPlaces = places
+        .filter((p) => p.source_name === source)
+        .slice(0, 3);
+      for (const p of relatedPlaces) {
+        suggestions.push({
+          type: "place",
+          text: p.restaurant_name,
+          subText: `${source} 출연`,
+          data: p,
+        });
+      }
+    }
+
+    // 2. 식당명 직접 매칭 (방송명 연관 검색에서 이미 추가된 것은 제외)
+    const addedPlaceIds = new Set(
+      suggestions.filter((s) => s.type === "place").map((s) => s.data?.id),
+    );
+
+    const directMatchedPlaces = places
+      .filter(
+        (p) =>
+          p.restaurant_name.toLowerCase().includes(query) &&
+          !addedPlaceIds.has(p.id),
+      )
+      .slice(0, 5);
+
+    for (const p of directMatchedPlaces) {
+      suggestions.push({
+        type: "place",
+        text: p.restaurant_name,
+        subText: p.category,
+        data: p,
+      });
+    }
+
+    // 3. 카테고리 매칭
+    const categories = Array.from(new Set(places.map((p) => p.category)));
+    const matchedCategories = categories
+      .filter(
+        (c) =>
+          c.toLowerCase().includes(query) &&
+          !suggestions.some((s) => s.type === "category" && s.text === c),
+      )
+      .slice(0, 2);
+
+    for (const c of matchedCategories) {
+      suggestions.push({ type: "category", text: c, subText: "음식 카테고리" });
+    }
+
+    return suggestions.slice(0, 8); // 최대 8개까지만 노출
+  }, [places, searchQuery]);
 
   // 필터 변경 핸들러
   const handleFilterChange = (
@@ -95,9 +201,14 @@ export default function Home() {
     });
   };
 
-  // 활성화된 필터 개수 계산 (뱃지용)
-  const activeFilterCount =
-    selectedFilters.sources.length + selectedFilters.categories.length;
+  // 활성화된 필터 개수 계산 (뱃지용) - 통합 UI에서는 사용 안 함
+
+  // 검색어 입력 시 필터 자동 해제 로직
+  useEffect(() => {
+    if (searchQuery.trim().length > 0) {
+      setSelectedFilters({ sources: [], categories: [] });
+    }
+  }, [searchQuery]);
 
   return (
     <main className="relative w-full h-screen overflow-hidden bg-gray-100">
@@ -111,35 +222,68 @@ export default function Home() {
               </h1>
             </div>
 
-            <div className="flex gap-2">
-              {/* 👇 목록 보기 버튼 */}
-              <button
-                type="button"
-                onClick={() => setIsListOpen(true)}
-                className="flex items-center gap-2 px-4 py-3 rounded-xl shadow-lg backdrop-blur-sm border bg-white/90 text-gray-700 border-gray-200 transition-colors pointer-events-auto active:scale-95"
-              >
-                <List size={18} />
-                <span className="font-bold text-sm">목록</span>
-              </button>
+            {/* 👇 검색창 */}
+            <div
+              className="flex-1 max-w-sm px-2 relative"
+              ref={searchContainerRef}
+            >
+              <div className="relative pointer-events-auto">
+                <Search
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                  size={18}
+                />
+                <input
+                  type="text"
+                  placeholder="식당명, 방송명, 메뉴 검색"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onFocus={() => setIsSearchFocused(true)}
+                  className="w-full bg-white/90 pl-10 pr-4 py-3 rounded-xl shadow-lg backdrop-blur-sm border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500/50 transition-all font-medium text-sm"
+                />
+              </div>
 
-              {/* 👇 필터 버튼 (모달 열기) */}
-              <button
-                type="button"
-                onClick={() => setIsFilterOpen(true)}
-                className={`
-                flex items-center gap-2 px-4 py-3 rounded-xl shadow-lg backdrop-blur-sm border transition-colors pointer-events-auto active:scale-95
-                ${activeFilterCount > 0 ? "bg-gray-900 text-white border-gray-900" : "bg-white/90 text-gray-700 border-gray-200"}
-              `}
-              >
-                <SlidersHorizontal size={18} />
-                <span className="font-bold text-sm">필터</span>
-                {activeFilterCount > 0 && (
-                  <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
-                    {activeFilterCount}
-                  </span>
-                )}
-              </button>
+              {/* 👇 연관 검색어 드롭다운 */}
+              {isSearchFocused && searchSuggestions.length > 0 && (
+                <div className="absolute top-full left-2 right-2 mt-2 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-gray-100 overflow-hidden pointer-events-auto animate-in fade-in slide-in-from-top-2 duration-200 z-60">
+                  <div className="py-2">
+                    {searchSuggestions.map((suggestion, idx) => (
+                      <button
+                        key={`${suggestion.type}-${suggestion.text}-${idx}`}
+                        type="button"
+                        onClick={() => {
+                          setSearchQuery(suggestion.text);
+                          setIsSearchFocused(false);
+                          if (suggestion.type === "place" && suggestion.data) {
+                            setSelectedPlace(suggestion.data);
+                          }
+                        }}
+                        className="w-full px-4 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors text-left group"
+                      >
+                        <div className="p-2 rounded-lg bg-gray-100 text-gray-400 group-hover:bg-red-50 group-hover:text-red-500 transition-colors">
+                          {suggestion.type === "place" && <MapPin size={16} />}
+                          {suggestion.type === "source" && <Tv size={16} />}
+                          {suggestion.type === "category" && (
+                            <Utensils size={16} />
+                          )}
+                        </div>
+                        <div className="flex flex-col flex-1 overflow-hidden">
+                          <span className="text-sm font-bold text-gray-900 truncate">
+                            {suggestion.text}
+                          </span>
+                          {suggestion.subText && (
+                            <span className="text-[10px] text-gray-400 font-medium truncate">
+                              {suggestion.subText}
+                            </span>
+                          )}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
+
+            {/* 👇 상단 메뉴 버튼 영역 제거 */}
           </div>
         )}
       </div>
@@ -170,12 +314,24 @@ export default function Home() {
         onReset={() => setSelectedFilters({ sources: [], categories: [] })}
       />
 
-      {/* 👇 장소 목록 모달 연결 */}
+      {/* 👇 장소 목록 모달 (통합 바텀 시트) 연결 */}
       <PlaceListModal
-        isOpen={isListOpen}
-        onClose={() => setIsListOpen(false)}
+        isOpen={true}
         places={processedPlaces}
         onPlaceClick={(place) => setSelectedPlace(place)}
+        hasActiveFilter={
+          searchQuery.trim().length > 0 ||
+          selectedFilters.sources.length > 0 ||
+          selectedFilters.categories.length > 0
+        }
+        availableFilters={availableFilters}
+        selectedFilters={selectedFilters}
+        onFilterChange={handleFilterChange}
+        onOpenFilterModal={() => setIsFilterOpen(true)}
+        onResetFilters={() =>
+          setSelectedFilters({ sources: [], categories: [] })
+        }
+        isSearching={searchQuery.trim().length > 0}
       />
     </main>
   );

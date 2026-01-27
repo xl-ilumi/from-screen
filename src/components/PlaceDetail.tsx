@@ -8,7 +8,7 @@ type Props = {
 
 export default function PlaceDetail({ place, onClose }: Props) {
   return (
-    <div className="absolute bottom-0 left-0 w-full z-50 p-4 animate-in slide-in-from-bottom duration-300">
+    <div className="absolute bottom-[100px] left-0 w-full z-50 p-4 animate-in slide-in-from-bottom duration-300">
       <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100 max-w-lg mx-auto">
         {/* 상단: 방송 정보 배지 */}
         <div className="bg-gray-50/50 px-6 py-4 flex justify-between items-center border-b border-gray-100/50">
