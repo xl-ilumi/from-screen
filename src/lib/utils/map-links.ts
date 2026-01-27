@@ -27,11 +27,13 @@ export const getMapAppLink = (
 
   switch (app) {
     case "naver":
-      return `nmap://route/public?dlat=${lat}&dlng=${lng}&dname=${encodedLabel}${
+      // 네이버 지도 앱: slat/slng을 명시하지 않으면 자동으로 '현위치'에서 시작하도록 유도 (더 정확함)
+      // 만약 명시하고 싶다면 slat, slng, sname 파라미터를 그대로 사용
+      return `nmap://route/public?dlat=${lat}&dlng=${lng}&dname=${encodedLabel}&appname=fromscreen${
         startParam
           ? `&slat=${startParam.lat}&slng=${startParam.lng}&sname=${encodeURIComponent("내 위치")}`
           : ""
-      }&appname=fromscreen`;
+      }`;
     case "kakao":
       // 카카오맵: sp=lat,lng (출발지), ep=lat,lng (도착지)
       return `kakaomap://route?ep=${lat},${lng}${
@@ -95,26 +97,27 @@ export const getMapWebFallback = (
  * 모바일 앱 실행을 시도하고 실패 시 웹 또는 스토어로 폴백
  */
 export const openMapApp = (app: MapApp, params: MapLinkParams) => {
-  if (app === "tmap" && !isMobile()) {
-    alert("티맵은 모바일 앱에서만 지원됩니다. 네이버 지도로 연결해 드릴게요!");
-    window.open(getMapWebFallback("naver", params), "_blank");
-    return;
-  }
-
   const appLink = getMapAppLink(app, params);
   const webLink = getMapWebFallback(app, params);
 
-  const start = Date.now();
-
-  // 구글 지도는 웹/앱 구분이 모호하므로 바로 이동
-  if (app === "google") {
-    window.location.href = webLink;
+  // 데스크톱 환경이거나 구글 지도의 경우 바로 새 탭에서 웹 버전 열기
+  if (!isMobile() || app === "google") {
+    if (app === "tmap" && !isMobile()) {
+      alert(
+        "티맵은 모바일 앱에서만 지원됩니다. 네이버 지도로 연결해 드릴게요!",
+      );
+      window.open(getMapWebFallback("naver", params), "_blank");
+      return;
+    }
+    window.open(webLink, "_blank");
     return;
   }
 
+  // 모바일 환경: 앱 호출 시도
+  const start = Date.now();
   window.location.href = appLink;
 
-  // 앱 실행 여부 감지 시도
+  // 앱 실행 여부 감지 시도 및 폴백 처리
   setTimeout(() => {
     // 2.5초 내에 페이지에 머물러 있다면 앱 실행 실패로 간주
     if (Date.now() - start < 2500) {
@@ -124,10 +127,11 @@ export const openMapApp = (app: MapApp, params: MapLinkParams) => {
             "티맵 앱이 설치되어 있지 않은 것 같습니다. 스토어로 이동할까요?",
           )
         ) {
-          window.location.href = webLink;
+          window.open(webLink, "_blank");
         }
       } else {
-        window.location.href = webLink;
+        // 일반 지도 앱은 새 탭에서 웹 버전 열기
+        window.open(webLink, "_blank");
       }
     }
   }, 2000);
