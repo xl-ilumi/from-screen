@@ -1,5 +1,7 @@
 import {
   Check as CheckIcon,
+  ChevronDown,
+  ChevronUp,
   Clock,
   Copy,
   ExternalLink,
@@ -23,6 +25,7 @@ type Props = {
 export default function PlaceDetail({ place, onClose, userLocation }: Props) {
   const [activeTab, setActiveTab] = useState<"info" | "video">("info");
   const [showMapMenu, setShowMapMenu] = useState(false);
+  const [showAllHours, setShowAllHours] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const handleCopyAddress = () => {
@@ -143,44 +146,126 @@ export default function PlaceDetail({ place, onClose, userLocation }: Props) {
                     </button>
                   </div>
                 </div>
+                {/* 영업 시간 섹션 (아코디언 형태) */}
                 {place.opening_hours && (
-                  <div className="flex items-start gap-3 px-4 py-3 bg-blue-50/30 rounded-2xl border border-blue-100/50">
-                    <Clock size={16} className="text-blue-500 mt-0.5" />
-                    <div className="flex flex-col gap-0.5">
-                      <span className="text-[11px] font-bold text-blue-600 uppercase">
-                        운영 시간
-                      </span>
-                      <p className="text-xs text-blue-900 font-medium leading-relaxed whitespace-pre-wrap">
-                        {place.opening_hours}
-                      </p>
-                    </div>
+                  <div className="bg-blue-50/30 rounded-2xl border border-blue-100/50 overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => setShowAllHours(!showAllHours)}
+                      className="w-full flex items-start gap-3 px-4 py-4 hover:bg-blue-50/50 transition-colors text-left"
+                    >
+                      <Clock
+                        size={16}
+                        className="text-blue-500 mt-1 shrink-0"
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[11px] font-bold text-blue-600 uppercase tracking-tight">
+                            영업 시간
+                          </span>
+                          {showAllHours ? (
+                            <ChevronUp size={16} className="text-blue-400" />
+                          ) : (
+                            <ChevronDown size={16} className="text-blue-400" />
+                          )}
+                        </div>
+                        <p className="text-[13px] text-blue-900 font-bold">
+                          {typeof place.opening_hours === "string"
+                            ? place.opening_hours
+                            : place.opening_hours[
+                                new Intl.DateTimeFormat("ko-KR", {
+                                  weekday: "short",
+                                }).format(new Date())
+                              ] || "정보 확인 필요"}
+                        </p>
+                        {!showAllHours && (
+                          <span className="text-[10px] text-blue-400 font-medium mt-1 inline-block">
+                            전체 요일 보기
+                          </span>
+                        )}
+                      </div>
+                    </button>
+
+                    {showAllHours &&
+                      typeof place.opening_hours === "object" && (
+                        <div className="px-4 pb-4 space-y-2 border-t border-blue-100/30 pt-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                          {["월", "화", "수", "목", "금", "토", "일"].map(
+                            (day) => (
+                              <div
+                                key={day}
+                                className="flex justify-between items-center text-xs"
+                              >
+                                <span
+                                  className={`font-bold ${new Intl.DateTimeFormat("ko-KR", { weekday: "short" }).format(new Date()) === day ? "text-blue-600" : "text-gray-500"}`}
+                                >
+                                  {day}요일
+                                </span>
+                                <span
+                                  className={`font-medium ${new Intl.DateTimeFormat("ko-KR", { weekday: "short" }).format(new Date()) === day ? "text-blue-700 font-bold" : "text-gray-600"}`}
+                                >
+                                  {place.opening_hours[day] || "정보 없음"}
+                                </span>
+                              </div>
+                            ),
+                          )}
+                        </div>
+                      )}
                   </div>
                 )}
               </section>
 
-              {/* 메뉴 섹션 */}
+              {/* 메뉴 섹션 (사진 포함 가로 리스트 또는 세로 리스트) */}
               {place.menu_info && (
-                <section className="space-y-3">
+                <section className="space-y-4">
                   <div className="flex items-center gap-2 text-gray-900 font-bold text-sm">
                     <Utensils size={16} className="text-orange-500" /> 대표 메뉴
                   </div>
-                  <div className="space-y-2">
-                    {place.menu_info.split("\n").map((menu, idx) => {
-                      const [name, price] = menu.split(":");
-                      return (
-                        <div
-                          key={idx}
-                          className="flex justify-between items-center p-4 bg-white rounded-2xl border border-gray-100 hover:border-gray-200 transition-all hover:bg-gray-50 group"
-                        >
-                          <span className="text-sm font-bold text-gray-800 group-hover:text-blue-600 transition-colors">
-                            {name}
-                          </span>
-                          <span className="text-sm font-black text-gray-400 group-hover:text-gray-900 transition-colors">
-                            {price ? `${price.trim()}` : ""}
-                          </span>
-                        </div>
-                      );
-                    })}
+                  <div className="space-y-3">
+                    {Array.isArray(place.menu_info)
+                      ? place.menu_info.map((menu: any, idx: number) => (
+                          <div
+                            key={idx}
+                            className="flex items-center gap-4 p-3 bg-white rounded-2xl border border-gray-100 hover:border-blue-100 transition-all hover:bg-blue-50/10 group"
+                          >
+                            {menu.image_url && (
+                              <div className="w-20 h-20 rounded-xl overflow-hidden bg-gray-100 shrink-0 border border-gray-50 shadow-sm">
+                                <img
+                                  src={menu.image_url}
+                                  alt={menu.name}
+                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                />
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <h4 className="text-[14px] font-bold text-gray-800 group-hover:text-blue-600 transition-colors truncate">
+                                {menu.name}
+                              </h4>
+                              <p className="text-[14px] font-black text-gray-900 mt-0.5">
+                                {menu.price}
+                              </p>
+                            </div>
+                          </div>
+                        ))
+                      : // 레거시 텍스트 대응
+                        place.menu_info
+                          .toString()
+                          .split("\n")
+                          .map((menu: string, idx: number) => {
+                            const [name, price] = menu.split(":");
+                            return (
+                              <div
+                                key={idx}
+                                className="flex justify-between items-center p-4 bg-white rounded-2xl border border-gray-100"
+                              >
+                                <span className="text-sm font-bold text-gray-800">
+                                  {name}
+                                </span>
+                                <span className="text-sm font-black text-gray-900">
+                                  {price?.trim()}
+                                </span>
+                              </div>
+                            );
+                          })}
                   </div>
                 </section>
               )}
