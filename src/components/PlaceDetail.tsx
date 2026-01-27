@@ -31,6 +31,7 @@ export default function PlaceDetail({ place, onClose }: Props) {
       lat: place.lat,
       lng: place.lng,
       name: place.restaurant_name,
+      address: place.address,
     });
     setShowMapMenu(false);
   };
