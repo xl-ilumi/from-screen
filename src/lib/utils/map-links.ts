@@ -19,17 +19,17 @@ export const getMapAppLink = (
   app: MapApp,
   { lat, lng, name, address, startLat, startLng }: MapLinkParams,
 ): string => {
-  const label = `${name} (${address})`;
-  const encodedLabel = encodeURIComponent(label);
+  const labelWithAddress = `${name} (${address})`;
+  const encodedLabelWithAddress = encodeURIComponent(labelWithAddress);
+  const encodedNameOnly = encodeURIComponent(name);
 
   const startParam =
     startLat && startLng ? { lat: startLat, lng: startLng } : null;
 
   switch (app) {
     case "naver":
-      // 네이버 지도 앱: slat/slng을 명시하지 않으면 자동으로 '현위치'에서 시작하도록 유도 (더 정확함)
-      // 만약 명시하고 싶다면 slat, slng, sname 파라미터를 그대로 사용
-      return `nmap://route/public?dlat=${lat}&dlng=${lng}&dname=${encodedLabel}&appname=fromscreen${
+      // 네이버 지도 앱: dname에 주소를 포함하면 인식이 안 되는 경우가 있어 이름만 전달
+      return `nmap://route/public?dlat=${lat}&dlng=${lng}&dname=${encodedNameOnly}&appname=fromscreen${
         startParam
           ? `&slat=${startParam.lat}&slng=${startParam.lng}&sname=${encodeURIComponent("내 위치")}`
           : ""
@@ -40,13 +40,13 @@ export const getMapAppLink = (
         startParam ? `&sp=${startParam.lat},${startParam.lng}` : ""
       }&by=PUBLICTRANSIT`;
     case "tmap":
-      return `tmap://route?dname=${encodedLabel}&dlat=${lat}&dlng=${lng}${
+      return `tmap://route?dname=${encodedLabelWithAddress}&dlat=${lat}&dlng=${lng}${
         startParam ? `&slat=${startParam.lat}&slng=${startParam.lng}` : ""
       }`;
     case "google":
       return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}${
         startParam ? `&origin=${startParam.lat},${startParam.lng}` : ""
-      }&query=${encodedLabel}`;
+      }&query=${encodedLabelWithAddress}`;
     default:
       return "#";
   }
@@ -56,38 +56,43 @@ export const getMapWebFallback = (
   app: MapApp,
   { lat, lng, name, address, startLat, startLng }: MapLinkParams,
 ): string => {
-  const label = `${name} (${address})`;
-  const encodedLabel = encodeURIComponent(label);
+  const labelWithAddress = `${name} (${address})`;
+  const encodedLabelWithAddress = encodeURIComponent(labelWithAddress);
   const encodedNameOnly = encodeURIComponent(name);
   const startParam =
     startLat && startLng ? { lat: startLat, lng: startLng } : null;
 
   switch (app) {
-    case "naver":
-      return `https://map.naver.com/v5/directions/${
-        startParam
-          ? `${startParam.lng},${startParam.lat},${encodeURIComponent("내 위치")}`
-          : "-"
-      }/${lng},${lat},${encodedLabel},/walk`;
+    case "naver": {
+      // 네이버 웹: https://map.naver.com/v5/directions/출발지/도착지/-/모드
+      // 좌표 형식: lng,lat,name
+      const start = startParam
+        ? `${startParam.lng},${startParam.lat},${encodeURIComponent("내 위치")}`
+        : "-";
+      const end = `${lng},${lat},${encodedLabelWithAddress}`;
+      return `https://map.naver.com/v5/directions/${start}/${end}/-/walk`;
+    }
     case "kakao":
       return `https://map.kakao.com/link/to/${encodedNameOnly},${lat},${lng}${
         startParam
           ? `/from/${encodeURIComponent("내 위치")},${startParam.lat},${startParam.lng}`
           : ""
       }`;
-    case "tmap":
+    case "tmap": {
       if (isIOS()) return "https://apps.apple.com/kr/app/t-map/id431589174";
       if (isAndroid())
         return "https://play.google.com/store/apps/details?id=com.skt.tmap.ku";
-      return `https://map.naver.com/v5/directions/${
-        startParam
-          ? `${startParam.lng},${startParam.lat},${encodeURIComponent("내 위치")}`
-          : "-"
-      }/${lng},${lat},${encodedLabel},/walk`;
+
+      const tMapStart = startParam
+        ? `${startParam.lng},${startParam.lat},${encodeURIComponent("내 위치")}`
+        : "-";
+      const tMapEnd = `${lng},${lat},${encodedLabelWithAddress}`;
+      return `https://map.naver.com/v5/directions/${tMapStart}/${tMapEnd}/-/walk`;
+    }
     case "google":
       return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}${
         startParam ? `&origin=${startParam.lat},${startParam.lng}` : ""
-      }&query=${encodedLabel}`;
+      }&query=${encodedLabelWithAddress}`;
     default:
       return "#";
   }
