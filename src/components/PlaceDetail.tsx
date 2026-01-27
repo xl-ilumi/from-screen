@@ -291,22 +291,75 @@ export default function PlaceDetail({ place, onClose, userLocation }: Props) {
                     </div>
                     <div>
                       <h4 className="text-xs font-bold text-red-900 mb-0.5">
-                        방송 다시보기
+                        방송 하이라이트
                       </h4>
-                      <p className="text-[11px] text-red-600 font-medium">
-                        유튜브에서 하이라이트 영상을 감상하세요
+                      <p className="text-[11px] text-red-600 font-medium font-inter">
+                        YouTube에서 해당 영상을 시청할 수 있습니다.
                       </p>
                     </div>
                   </div>
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center py-12 text-center space-y-3">
-                  <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center text-gray-300">
-                    <Youtube size={32} />
+                <div className="space-y-6">
+                  {/* TV 프로그램 정보 카드 */}
+                  <div className="relative rounded-3xl overflow-hidden bg-gray-900 aspect-[16/10] shadow-xl group">
+                    {place.thumbnail_url ? (
+                      <img
+                        src={place.thumbnail_url}
+                        alt={place.source_name}
+                        className="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-700"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
+                        <Tv size={48} className="text-gray-700" />
+                      </div>
+                    )}
+                    <div className="absolute inset-0 p-6 flex flex-col justify-end bg-gradient-to-t from-black/90 via-black/40 to-transparent">
+                      <span className="text-blue-400 text-[10px] font-black uppercase tracking-widest mb-2">
+                        Television Show
+                      </span>
+                      <h3 className="text-white text-xl font-black leading-tight">
+                        {place.source_name}
+                      </h3>
+                      <p className="text-white/70 text-sm font-bold mt-1">
+                        {place.title}
+                      </p>
+                    </div>
                   </div>
-                  <p className="text-sm text-gray-400 font-medium">
-                    등록된 방송 영상이 없습니다.
-                  </p>
+
+                  {/* 관련 링크 버튼들 */}
+                  <div className="space-y-3">
+                    {place.vod_url && (
+                      <a
+                        href={place.vod_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-between p-4 bg-blue-600 text-white rounded-2xl font-bold text-sm shadow-lg shadow-blue-100 transition-all hover:bg-blue-700 active:scale-[0.98]"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+                            <Play size={16} fill="white" />
+                          </div>
+                          <span>OTT 다시보기</span>
+                        </div>
+                        <ExternalLink size={16} />
+                      </a>
+                    )}
+                    <a
+                      href={`https://search.naver.com/search.naver?query=${encodeURIComponent(`${place.source_name} ${place.title} ${place.restaurant_name}`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-between p-4 bg-white text-gray-700 rounded-2xl font-bold text-sm border border-gray-200 transition-all hover:bg-gray-50 active:scale-[0.98]"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center text-white font-black text-xs">
+                          N
+                        </div>
+                        <span>네이버에서 방송 정보 찾기</span>
+                      </div>
+                      <ExternalLink size={16} />
+                    </a>
+                  </div>
                 </div>
               )}
             </div>

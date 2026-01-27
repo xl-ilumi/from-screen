@@ -15,6 +15,8 @@ export type Place = {
   menu_info?: any; // JSONB: [{ name, price, image_url }]
   opening_hours?: any; // JSONB: { 월: "...", 화: "..." }
   video_url?: string;
+  vod_url?: string;
+  thumbnail_url?: string;
   distance?: number;
 };
 
