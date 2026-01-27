@@ -41,9 +41,9 @@ export default function PlaceDetail({ place, onClose, userLocation }: Props) {
 
   return (
     <div className="absolute bottom-[100px] left-0 w-full z-50 p-4 animate-in slide-in-from-bottom duration-300">
-      <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100 max-w-lg mx-auto relative">
+      <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 max-w-lg mx-auto relative">
         {/* 상단: 방송 정보 배지 */}
-        <div className="bg-gray-50/50 px-6 py-4 flex justify-between items-center border-b border-gray-100/50">
+        <div className="bg-gray-50/50 px-6 py-4 flex justify-between items-center border-b border-gray-100/50 rounded-t-3xl">
           <div className="flex items-center gap-2">
             {place.source_type === "TV" ? (
               <span className="bg-red-50 text-red-600 px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 border border-red-100">
