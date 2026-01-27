@@ -12,6 +12,9 @@ export type Place = {
   source_type: "TV" | "YOUTUBE";
   address: string;
   channel_name?: string;
+  menu_info?: string;
+  opening_hours?: string;
+  video_url?: string;
   distance?: number;
 };
 
