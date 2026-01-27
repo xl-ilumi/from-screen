@@ -1,4 +1,11 @@
-import { ExternalLink, Tv, X, Youtube } from "lucide-react";
+import {
+  Check as CheckIcon,
+  Copy,
+  ExternalLink,
+  Tv,
+  X,
+  Youtube,
+} from "lucide-react";
 import { useState } from "react";
 import type { Place } from "@/lib/api";
 import { openMapApp } from "@/lib/utils/map-links";
@@ -10,8 +17,16 @@ type Props = {
 
 export default function PlaceDetail({ place, onClose }: Props) {
   const [showMapMenu, setShowMapMenu] = useState(false);
+  const [copied, setCopied] = useState(false);
 
-  const handleRoute = (app: "naver" | "kakao" | "google") => {
+  const handleCopyAddress = () => {
+    if (!place.address) return;
+    navigator.clipboard.writeText(place.address);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleRoute = (app: "naver" | "kakao" | "google" | "tmap") => {
     openMapApp(app, {
       lat: place.lat,
       lng: place.lng,
@@ -47,11 +62,37 @@ export default function PlaceDetail({ place, onClose }: Props) {
 
         {/* 메인: 식당 정보 */}
         <div className="p-6">
-          <div className="mb-4">
+          <div className="mb-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-1">
               {place.restaurant_name}
             </h2>
-            <p className="text-sm text-gray-500 font-medium">{place.title}</p>
+            <p className="text-sm text-gray-500 font-medium mb-3">
+              {place.title}
+            </p>
+
+            {/* 주소 정보 및 복사 버튼 */}
+            <div className="flex items-center justify-between bg-gray-50 p-3 rounded-xl border border-gray-100 group">
+              <div className="flex flex-col gap-0.5 overflow-hidden">
+                <span className="text-[10px] font-bold text-gray-400 uppercase">
+                  지번/도로명 주소
+                </span>
+                <p className="text-[13px] text-gray-600 font-medium truncate pr-2">
+                  {place.address || "주소 정보가 없습니다."}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleCopyAddress}
+                className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+                  copied
+                    ? "bg-green-500 text-white"
+                    : "bg-white text-gray-700 border border-gray-200 hover:border-gray-300"
+                }`}
+              >
+                {copied ? <CheckIcon size={14} /> : <Copy size={14} />}
+                {copied ? "복사됨" : "복사"}
+              </button>
+            </div>
           </div>
 
           <div className="flex gap-3 relative">
@@ -76,12 +117,13 @@ export default function PlaceDetail({ place, onClose }: Props) {
 
             {/* 👇 지도 앱 선택 팝업 메뉴 */}
             {showMapMenu && (
-              <div className="absolute bottom-full right-0 mb-3 w-48 bg-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.2)] border border-gray-100 overflow-hidden animate-in fade-in zoom-in slide-in-from-bottom-2 duration-200 z-[60]">
+              <div className="absolute bottom-full right-0 mb-3 w-48 bg-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.2)] border border-gray-100 overflow-hidden animate-in fade-in zoom-in slide-in-from-bottom-2 duration-200 z-60">
                 <div className="p-2 flex flex-col gap-1">
                   <p className="px-3 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
                     지도 앱 선택
                   </p>
                   <button
+                    type="button"
                     onClick={() => handleRoute("naver")}
                     className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-green-50 transition-colors text-left group"
                   >
@@ -93,6 +135,7 @@ export default function PlaceDetail({ place, onClose }: Props) {
                     </span>
                   </button>
                   <button
+                    type="button"
                     onClick={() => handleRoute("kakao")}
                     className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-yellow-50 transition-colors text-left group"
                   >
@@ -104,6 +147,7 @@ export default function PlaceDetail({ place, onClose }: Props) {
                     </span>
                   </button>
                   <button
+                    type="button"
                     onClick={() => handleRoute("google")}
                     className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-blue-50 transition-colors text-left group"
                   >
@@ -112,6 +156,18 @@ export default function PlaceDetail({ place, onClose }: Props) {
                     </div>
                     <span className="text-sm font-bold text-gray-700 group-hover:text-blue-700">
                       Google 지도
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleRoute("tmap")}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-orange-50 transition-colors text-left group"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center text-white font-black text-xs">
+                      T
+                    </div>
+                    <span className="text-sm font-bold text-gray-700 group-hover:text-orange-700">
+                      티맵 (T-map)
                     </span>
                   </button>
                 </div>

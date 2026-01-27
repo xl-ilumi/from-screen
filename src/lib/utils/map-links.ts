@@ -1,6 +1,6 @@
 // src/lib/utils/map-links.ts
 
-export type MapApp = "naver" | "kakao" | "google";
+export type MapApp = "naver" | "kakao" | "google" | "tmap";
 
 interface MapLinkParams {
   lat: number;
@@ -23,6 +23,10 @@ export const getMapAppLink = (
       // 카카오 지도 앱 길찾기
       return `kakaomap://route?ep=${lat},${lng}&by=PUBLICTRANSIT`;
 
+    case "tmap":
+      // 티맵 앱 길찾기
+      return `tmap://route?dname=${encodedName}&dlat=${lat}&dlng=${lng}`;
+
     case "google":
       // 구글 지도 (웹/앱 공용)
       return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
@@ -43,6 +47,9 @@ export const getMapWebFallback = (
       return `https://map.naver.com/v5/directions/-/-/destination,${lng},${lat},${encodedName},/walk`;
     case "kakao":
       return `https://map.kakao.com/link/to/${encodedName},${lat},${lng}`;
+    case "tmap":
+      // 티맵은 웹 길찾기가 약하므로 구글 지도로 대체 노출
+      return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
     case "google":
       return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
     default:

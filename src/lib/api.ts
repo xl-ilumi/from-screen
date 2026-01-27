@@ -10,6 +10,8 @@ export type Place = {
   lat: number;
   lng: number;
   source_type: "TV" | "YOUTUBE";
+  address: string;
+  channel_name?: string;
   distance?: number;
 };
 
