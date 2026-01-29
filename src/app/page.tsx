@@ -212,40 +212,36 @@ export default function Home() {
   }, [searchQuery]);
 
   return (
-    <main className="relative w-[480px] h-screen mx-auto overflow-hidden bg-gray-100">
+    <main className="relative h-screen mx-auto overflow-hidden bg-gray-100">
       {/* 상단바 */}
-      <div className="absolute top-0 left-0 w-full z-50 flex flex-col gap-2 pt-4 pointer-events-none">
+      <header className="absolute top-0 left-0 w-full z-50 pt-4 pointer-events-none">
         {!selectedPlace && (
-          <div className="px-4 flex justify-between items-start pointer-events-auto">
-            <div className="bg-white/90 px-4 py-3 rounded-xl shadow-lg backdrop-blur-sm border border-gray-200">
-              <h1 className="text-lg font-bold">
-                <Image src="/logo.png" alt="Logo" width={56} height={56} />
-              </h1>
-            </div>
-
+          <div className="px-4 flex justify-center gap-3 pointer-events-auto">
             {/* 👇 검색창 */}
-            <div
-              className="flex-1 max-w-sm px-2 relative"
-              ref={searchContainerRef}
-            >
-              <div className="relative pointer-events-auto">
-                <Search
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                  size={18}
-                />
+            <div className="w-full max-w-md relative" ref={searchContainerRef}>
+              <div className="flex items-center gap-2 bg-white/90 px-3 py-2 rounded-xl shadow-lg backdrop-blur-sm border border-gray-200 pointer-events-auto">
+                {/* 로고 */}
+                <h1 className="shrink-0">
+                  <Image src="/logo.png" alt="Logo" width={36} height={36} />
+                </h1>
+
+                {/* 인풋 */}
                 <input
                   type="text"
                   placeholder="식당명, 방송명, 메뉴 검색"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onFocus={() => setIsSearchFocused(true)}
-                  className="w-full bg-white/90 pl-10 pr-4 py-3 rounded-xl shadow-lg backdrop-blur-sm border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500/50 transition-all font-medium text-sm"
+                  className="flex-1 bg-transparent py-2 focus:outline-none font-medium text-sm placeholder:text-gray-400"
                 />
+
+                {/* 검색 아이콘 */}
+                <Search className="shrink-0 text-gray-400" size={20} />
               </div>
 
               {/* 👇 연관 검색어 드롭다운 */}
               {isSearchFocused && searchSuggestions.length > 0 && (
-                <div className="absolute top-full left-2 right-2 mt-2 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-gray-100 overflow-hidden pointer-events-auto animate-in fade-in slide-in-from-top-2 duration-200 z-60">
+                <div className="absolute top-full left-0 right-0 mt-2 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-gray-100 overflow-hidden pointer-events-auto animate-in fade-in slide-in-from-top-2 duration-200 z-60">
                   <div className="py-2">
                     {searchSuggestions.map((suggestion, idx) => (
                       <button
@@ -283,11 +279,9 @@ export default function Home() {
                 </div>
               )}
             </div>
-
-            {/* 👇 상단 메뉴 버튼 영역 제거 */}
           </div>
         )}
-      </div>
+      </header>
 
       {/* 메인 컨텐츠: 지도는 항상 유지 */}
       <NaverMap
