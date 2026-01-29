@@ -240,7 +240,12 @@ export default function PlaceDetail({ place, onClose, userLocation }: Props) {
                               <h4 className="text-[14px] font-bold text-gray-800 group-hover:text-blue-600 transition-colors truncate">
                                 {menu.name}
                               </h4>
-                              <p className="text-[14px] font-black text-gray-900 mt-0.5">
+                              {menu.description && (
+                                <p className="text-[11px] text-gray-400 mt-0.5 line-clamp-2 leading-relaxed">
+                                  {menu.description}
+                                </p>
+                              )}
+                              <p className="text-[14px] font-black text-gray-900 mt-1">
                                 {menu.price}
                               </p>
                             </div>

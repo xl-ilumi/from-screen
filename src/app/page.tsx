@@ -1,6 +1,7 @@
 "use client";
 
 import { MapPin, Search, Tv, Utensils } from "lucide-react";
+import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import FilterModal from "@/components/FilterModal";
 import NaverMap from "@/components/NaverMap";
@@ -211,14 +212,14 @@ export default function Home() {
   }, [searchQuery]);
 
   return (
-    <main className="relative w-full h-screen overflow-hidden bg-gray-100">
+    <main className="relative w-[480px] h-screen mx-auto overflow-hidden bg-gray-100">
       {/* 상단바 */}
       <div className="absolute top-0 left-0 w-full z-50 flex flex-col gap-2 pt-4 pointer-events-none">
         {!selectedPlace && (
           <div className="px-4 flex justify-between items-start pointer-events-auto">
             <div className="bg-white/90 px-4 py-3 rounded-xl shadow-lg backdrop-blur-sm border border-gray-200">
               <h1 className="text-lg font-bold">
-                <span className="text-red-600">From</span>Screen
+                <Image src="/logo.png" alt="Logo" width={56} height={56} />
               </h1>
             </div>
 
