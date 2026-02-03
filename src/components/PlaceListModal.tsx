@@ -1,5 +1,3 @@
-// src/components/PlaceListModal.tsx
-
 import { Check, ChevronDown, ChevronUp, SlidersHorizontal } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { Place } from "@/lib/api";
@@ -37,6 +35,22 @@ export default function PlaceListModal({
   isSearching,
 }: Props) {
   const [isExpanded, setIsExpanded] = useState(false);
+
+  // 선택된 source 필터와 매칭되는 방송을 찾는 헬퍼 함수
+  const getMatchingBroadcast = (place: Place) => {
+    if (!place.broadcasts || place.broadcasts.length === 0) return null;
+
+    // 선택된 source 필터가 있으면 매칭되는 방송 찾기
+    if (selectedFilters.sources.length > 0) {
+      const matched = place.broadcasts.find((b) =>
+        selectedFilters.sources.includes(b.source_name),
+      );
+      if (matched) return matched;
+    }
+
+    // 매칭되는 게 없으면 첫 번째 방송 반환
+    return place.broadcasts[0];
+  };
 
   // 검색 중일 때는 자동으로 바텀 시트 확장
   useEffect(() => {
@@ -187,20 +201,26 @@ export default function PlaceListModal({
                 <h3 className="font-bold text-gray-900 text-base">
                   {place.restaurant_name}
                 </h3>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <span
-                    className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                      place.source_type === "TV"
-                        ? "bg-red-50 text-red-600"
-                        : "bg-blue-50 text-blue-600"
-                    }`}
-                  >
-                    {place.source_name}
-                  </span>
-                  <span className="text-xs text-gray-500 truncate">
-                    {place.title}
-                  </span>
-                </div>
+                {(() => {
+                  const broadcast = getMatchingBroadcast(place);
+                  if (!broadcast) return null;
+                  return (
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span
+                        className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                          broadcast.source_type === "TV"
+                            ? "bg-blue-50 text-blue-600"
+                            : "bg-red-50 text-red-600"
+                        }`}
+                      >
+                        {broadcast.source_name}
+                      </span>
+                      <span className="text-xs text-gray-500 truncate">
+                        {broadcast.title}
+                      </span>
+                    </div>
+                  );
+                })()}
               </button>
             ))
           )}

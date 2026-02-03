@@ -12,8 +12,9 @@ import {
   X,
   Youtube,
 } from "lucide-react";
+import Image from "next/image";
 import { useMemo, useState } from "react";
-import type { Place } from "@/lib/api";
+import type { MenuItem, OpeningHours, Place } from "@/lib/api";
 import { openMapApp } from "@/lib/utils/map-links";
 
 type Props = {
@@ -62,16 +63,24 @@ export default function PlaceDetail({ place, onClose, userLocation }: Props) {
         {/* 상단: 헤더 및 배지 */}
         <div className="bg-white px-6 pt-6 pb-4 flex justify-between items-start shrink-0">
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              {place.source_type === "TV" ? (
-                <span className="bg-red-50 text-red-600 px-2.5 py-1 rounded-full text-[10px] font-bold flex items-center gap-1 border border-red-100">
-                  <Tv size={12} /> {place.source_name}
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
+              {place.broadcasts.map((broadcast, idx) => (
+                <span
+                  key={`${broadcast.source_name}-${idx}`}
+                  className={`px-2.5 py-1 rounded-full text-[10px] font-bold flex items-center gap-1 border ${
+                    broadcast.source_type === "TV"
+                      ? "bg-blue-50 text-blue-600 border-blue-100"
+                      : "bg-red-50 text-red-600 border-red-100"
+                  }`}
+                >
+                  {broadcast.source_type === "TV" ? (
+                    <Tv size={12} />
+                  ) : (
+                    <Youtube size={12} />
+                  )}
+                  {broadcast.source_name}
                 </span>
-              ) : (
-                <span className="bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full text-[10px] font-bold flex items-center gap-1 border border-blue-100">
-                  <Youtube size={12} /> {place.channel_name || "유튜브"}
-                </span>
-              )}
+              ))}
               <span className="bg-gray-100 text-gray-500 px-2.5 py-1 rounded-full text-[10px] font-bold">
                 {place.category}
               </span>
@@ -80,7 +89,7 @@ export default function PlaceDetail({ place, onClose, userLocation }: Props) {
               {place.restaurant_name}
             </h2>
             <p className="text-sm text-gray-500 font-medium mt-1 line-clamp-1">
-              {place.title}
+              {place.broadcasts[0]?.title}
             </p>
           </div>
           <button
@@ -95,6 +104,7 @@ export default function PlaceDetail({ place, onClose, userLocation }: Props) {
         {/* 탭 메뉴 */}
         <div className="flex px-6 border-b border-gray-100 shrink-0">
           <button
+            type="button"
             onClick={() => setActiveTab("info")}
             className={`flex-1 py-3 text-sm font-bold transition-all relative ${
               activeTab === "info" ? "text-blue-600" : "text-gray-400"
@@ -106,6 +116,7 @@ export default function PlaceDetail({ place, onClose, userLocation }: Props) {
             )}
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab("video")}
             className={`flex-1 py-3 text-sm font-bold transition-all relative ${
               activeTab === "video" ? "text-blue-600" : "text-gray-400"
@@ -203,7 +214,8 @@ export default function PlaceDetail({ place, onClose, userLocation }: Props) {
                                 <span
                                   className={`font-medium ${new Intl.DateTimeFormat("ko-KR", { weekday: "short" }).format(new Date()) === day ? "text-blue-700 font-bold" : "text-gray-600"}`}
                                 >
-                                  {place.opening_hours[day] || "정보 없음"}
+                                  {(place.opening_hours as OpeningHours)[day] ||
+                                    "정보 없음"}
                                 </span>
                               </div>
                             ),
@@ -222,17 +234,18 @@ export default function PlaceDetail({ place, onClose, userLocation }: Props) {
                   </div>
                   <div className="space-y-3">
                     {Array.isArray(place.menu_info)
-                      ? place.menu_info.map((menu: any, idx: number) => (
+                      ? place.menu_info.map((menu: MenuItem, idx: number) => (
                           <div
-                            key={idx}
+                            key={`${menu.name}-${idx}`}
                             className="flex items-center gap-4 p-3 bg-white rounded-2xl border border-gray-100 hover:border-blue-100 transition-all hover:bg-blue-50/10 group"
                           >
                             {menu.image_url && (
                               <div className="w-20 h-20 rounded-xl overflow-hidden bg-gray-100 shrink-0 border border-gray-50 shadow-sm">
-                                <img
+                                <Image
                                   src={menu.image_url}
                                   alt={menu.name}
                                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                  fill
                                 />
                               </div>
                             )}
@@ -255,11 +268,11 @@ export default function PlaceDetail({ place, onClose, userLocation }: Props) {
                         place.menu_info
                           .toString()
                           .split("\n")
-                          .map((menu: string, idx: number) => {
+                          .map((menu: string) => {
                             const [name, price] = menu.split(":");
                             return (
                               <div
-                                key={idx}
+                                key={`legacy-${name?.trim()}-${price?.trim()}`}
                                 className="flex justify-between items-center p-4 bg-white rounded-2xl border border-gray-100"
                               >
                                 <span className="text-sm font-bold text-gray-800">
@@ -305,53 +318,45 @@ export default function PlaceDetail({ place, onClose, userLocation }: Props) {
                   </div>
                 </div>
               ) : (
-                <div className="space-y-6">
-                  {/* TV 프로그램 정보 카드 */}
-                  <div className="relative rounded-3xl overflow-hidden bg-gray-900 aspect-[16/10] shadow-xl group">
-                    {place.thumbnail_url ? (
-                      <img
-                        src={place.thumbnail_url}
-                        alt={place.source_name}
-                        className="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-700"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
-                        <Tv size={48} className="text-gray-700" />
+                <div className="space-y-4">
+                  {/* 방송 프로그램 정보 카드 - 모든 방송 표시 */}
+                  {place.broadcasts.map((broadcast, idx) => (
+                    <div
+                      key={`${broadcast.source_name}-${idx}`}
+                      className="relative rounded-3xl overflow-hidden bg-gray-900 aspect-16/10 shadow-xl group"
+                    >
+                      {broadcast.icon_url ? (
+                        <Image
+                          src={broadcast.icon_url}
+                          alt={broadcast.source_name}
+                          className="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-700"
+                          fill
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-linear-to-br from-gray-800 to-gray-900 flex items-center justify-center">
+                          <Tv size={48} className="text-gray-700" />
+                        </div>
+                      )}
+                      <div className="absolute inset-0 p-6 flex flex-col justify-end bg-linear-to-t from-black/90 via-black/40 to-transparent">
+                        <span className="text-blue-400 text-[10px] font-black uppercase tracking-widest mb-2">
+                          {broadcast.source_type === "TV"
+                            ? "Television Show"
+                            : "YouTube"}
+                        </span>
+                        <h3 className="text-white text-xl font-black leading-tight">
+                          {broadcast.source_name}
+                        </h3>
+                        <p className="text-white/70 text-sm font-bold mt-1">
+                          {broadcast.title}
+                        </p>
                       </div>
-                    )}
-                    <div className="absolute inset-0 p-6 flex flex-col justify-end bg-gradient-to-t from-black/90 via-black/40 to-transparent">
-                      <span className="text-blue-400 text-[10px] font-black uppercase tracking-widest mb-2">
-                        Television Show
-                      </span>
-                      <h3 className="text-white text-xl font-black leading-tight">
-                        {place.source_name}
-                      </h3>
-                      <p className="text-white/70 text-sm font-bold mt-1">
-                        {place.title}
-                      </p>
                     </div>
-                  </div>
+                  ))}
 
                   {/* 관련 링크 버튼들 */}
                   <div className="space-y-3">
-                    {place.vod_url && (
-                      <a
-                        href={place.vod_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-between p-4 bg-blue-600 text-white rounded-2xl font-bold text-sm shadow-lg shadow-blue-100 transition-all hover:bg-blue-700 active:scale-[0.98]"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-                            <Play size={16} fill="white" />
-                          </div>
-                          <span>OTT 다시보기</span>
-                        </div>
-                        <ExternalLink size={16} />
-                      </a>
-                    )}
                     <a
-                      href={`https://search.naver.com/search.naver?query=${encodeURIComponent(`${place.source_name} ${place.title} ${place.restaurant_name}`)}`}
+                      href={`https://search.naver.com/search.naver?query=${encodeURIComponent(`${place.broadcasts[0]?.source_name} ${place.broadcasts[0]?.title} ${place.restaurant_name}`)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center justify-between p-4 bg-white text-gray-700 rounded-2xl font-bold text-sm border border-gray-200 transition-all hover:bg-gray-50 active:scale-[0.98]"

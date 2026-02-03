@@ -203,7 +203,7 @@ export default function NaverMap({
           content: `
             <div style="
               width: 32px; height: 32px; 
-              background: ${place.source_type === "TV" ? "#EF4444" : "#3B82F6"}; 
+              background: ${place.broadcasts[0]?.source_type === "TV" ? "#3B82F6" : "#EF4444"}; 
               border: 3px solid white; border-radius: 50%; 
               box-shadow: 0 4px 12px rgba(0,0,0,0.2); 
               cursor: pointer;
@@ -211,7 +211,7 @@ export default function NaverMap({
               transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             " onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                ${place.source_type === "TV" ? '<path d="M2 8V2h20v14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8Z"/><path d="m2 8 10 7 10-7"/><path d="m2 2 10 7L22 2"/>' : '<path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"/><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"/>'}
+                ${place.broadcasts[0]?.source_type === "TV" ? '<path d="M2 8V2h20v14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8Z"/><path d="m2 8 10 7 10-7"/><path d="m2 2 10 7L22 2"/>' : '<path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"/><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"/>'}
               </svg>
             </div>
           `,
@@ -250,14 +250,14 @@ export default function NaverMap({
         <button
           type="button"
           onClick={() => handleCurrentLocation()}
-          className="absolute bottom-6 right-4 z-40 bg-white p-3 rounded-full shadow-lg border border-gray-100 text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition-all active:scale-95"
+          className="absolute top-20 right-4 z-40 bg-white p-3 rounded-full shadow-lg border border-gray-100 text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition-all active:scale-95"
           aria-label="내 위치로 이동"
         >
           {/* 로딩 중이면 뱅글뱅글, 아니면 조준점 아이콘 */}
           {isLoadingLocation ? (
             <div className="w-6 h-6 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin" />
           ) : (
-            <Locate size={24} />
+            <Locate size={16} />
           )}
         </button>
       </div>

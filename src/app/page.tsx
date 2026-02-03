@@ -53,9 +53,9 @@ export default function Home() {
   // DB 데이터에서 필터 옵션 자동 추출 (중복 제거)
   const availableFilters = useMemo(() => {
     return {
-      sources: Array.from(new Set(places.map((p) => p.source_name))).filter(
-        Boolean,
-      ),
+      sources: Array.from(
+        new Set(places.flatMap((p) => p.broadcasts.map((b) => b.source_name))),
+      ).filter(Boolean),
       categories: Array.from(new Set(places.map((p) => p.category))).filter(
         Boolean,
       ),
@@ -69,7 +69,9 @@ export default function Home() {
     // 1. 방송 필터 적용
     if (selectedFilters.sources.length > 0) {
       result = result.filter((p) =>
-        selectedFilters.sources.includes(p.source_name),
+        p.broadcasts.some((b) =>
+          selectedFilters.sources.includes(b.source_name),
+        ),
       );
     }
     // 2. 카테고리 필터 적용
@@ -100,9 +102,11 @@ export default function Home() {
       result = result.filter(
         (p) =>
           p.restaurant_name.toLowerCase().includes(query) ||
-          p.source_name.toLowerCase().includes(query) ||
+          p.broadcasts.some((b) =>
+            b.source_name.toLowerCase().includes(query),
+          ) ||
           p.category.toLowerCase().includes(query) ||
-          p.title.toLowerCase().includes(query),
+          p.broadcasts.some((b) => b.title.toLowerCase().includes(query)),
       );
     }
 
@@ -121,7 +125,9 @@ export default function Home() {
     }[] = [];
 
     // 1. 방송명 매칭 (핵심 연관성)
-    const sources = Array.from(new Set(places.map((p) => p.source_name)));
+    const sources = Array.from(
+      new Set(places.flatMap((p) => p.broadcasts.map((b) => b.source_name))),
+    );
     const matchedSources = sources.filter((s) =>
       s.toLowerCase().includes(query),
     );
@@ -136,7 +142,7 @@ export default function Home() {
 
       // 이 방송에 출연한 식당들도 최대 3개까지 제안에 포함
       const relatedPlaces = places
-        .filter((p) => p.source_name === source)
+        .filter((p) => p.broadcasts.some((b) => b.source_name === source))
         .slice(0, 3);
       for (const p of relatedPlaces) {
         suggestions.push({

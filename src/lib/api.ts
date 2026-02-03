@@ -1,23 +1,39 @@
 // src/lib/api.ts
 import { supabase } from "./supabase";
 
+export type BroadcastInfo = {
+  source_name: string;
+  source_type: "TV" | "YOUTUBE";
+  icon_url: string;
+  title: string;
+};
+
+export type MenuItem = {
+  name: string;
+  price: string;
+  description?: string;
+  image_url?: string;
+};
+
+export type OpeningHours = {
+  [day: string]: string;
+};
+
 export type Place = {
   id: string;
-  title: string;
   restaurant_name: string;
   category: string;
-  source_name: string;
+  address: string;
   lat: number;
   lng: number;
-  source_type: "TV" | "YOUTUBE";
-  address: string;
-  channel_name?: string;
-  menu_info?: any; // JSONB: [{ name, price, image_url }]
-  opening_hours?: any; // JSONB: { 월: "...", 화: "..." }
+  broadcasts: BroadcastInfo[];
+  distance?: number;
+  // 상세 정보
   video_url?: string;
   vod_url?: string;
   thumbnail_url?: string;
-  distance?: number;
+  opening_hours?: string | OpeningHours;
+  menu_info?: MenuItem[] | string;
 };
 
 export async function getPlaces(): Promise<Place[]> {
