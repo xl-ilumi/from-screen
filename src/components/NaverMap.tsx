@@ -202,17 +202,18 @@ export default function NaverMap({
         icon: {
           content: `
             <div style="
-              width: 32px; height: 32px; 
-              background: ${place.broadcasts[0]?.source_type === "TV" ? "#3B82F6" : "#EF4444"}; 
-              border: 3px solid white; border-radius: 50%; 
-              box-shadow: 0 4px 12px rgba(0,0,0,0.2); 
+              width: 28px;
               cursor: pointer;
               display: flex; align-items: center; justify-content: center;
               transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             " onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            ${
+              place.broadcasts[0]?.icon_url
+                ? `<img src="${place.broadcasts[0]?.icon_url}" alt="${place.broadcasts[0]?.source_name}" class="w-full h-full object-cover" />`
+                : `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                 ${place.broadcasts[0]?.source_type === "TV" ? '<path d="M2 8V2h20v14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8Z"/><path d="m2 8 10 7 10-7"/><path d="m2 2 10 7L22 2"/>' : '<path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"/><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"/>'}
-              </svg>
+              </svg>`
+            }
             </div>
           `,
           anchor: new window.naver.maps.Point(16, 16),
