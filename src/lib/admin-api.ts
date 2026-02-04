@@ -231,6 +231,25 @@ export async function createSource(input: CreateSourceInput): Promise<Source> {
   return data;
 }
 
+export async function updateSource(
+  id: string,
+  input: Partial<CreateSourceInput>,
+): Promise<Source> {
+  const { data, error } = await supabase
+    .from("sources")
+    .update(input)
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("소스 수정 실패:", error);
+    throw new Error(error.message);
+  }
+
+  return data;
+}
+
 // ==================== Appearances ====================
 
 export type CreateAppearanceInput = {

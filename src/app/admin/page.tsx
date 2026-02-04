@@ -31,8 +31,8 @@ export default function AdminLoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-[#fdfdfd]">
       {/* 배경 효과 */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-gradient-to-br from-indigo-100/50 to-transparent rounded-full blur-3xl" />
-        <div className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-gradient-to-tl from-rose-100/50 to-transparent rounded-full blur-3xl" />
+        <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-linear-to-br from-indigo-100/50 to-transparent rounded-full blur-3xl" />
+        <div className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-linear-to-tl from-rose-100/50 to-transparent rounded-full blur-3xl" />
       </div>
 
       <div className="relative w-full max-w-md mx-4">

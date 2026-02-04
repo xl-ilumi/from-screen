@@ -29,7 +29,7 @@ const navItems = [
   },
   {
     href: "/admin/sources",
-    label: "방송 관리",
+    label: "채널 관리",
     icon: Tv,
   },
 ];
